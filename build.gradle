@@ -1,0 +1,59 @@
+plugins {
+	id 'java'
+	id 'jacoco'
+	id 'org.springframework.boot' version "${springbootVersion}"
+	id 'io.spring.dependency-management' version "${springbootDepedencyVersion}"
+}
+
+group = 'com.changeme'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	set('netflixDgsVersion', "${netflixDgsVersion}")
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'com.mysql:mysql-connector-j'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter-test'
+	testImplementation 'org.springframework:spring-webflux'
+	testImplementation 'org.springframework.graphql:spring-graphql-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+Boolean enableDgsCodegen = (project.findProperty("dgsCodeGenEnabled") as String ?: "false").toBoolean()
+
+dependencyManagement {
+	if (enableDgsCodegen) {
+		imports {
+			mavenBom "com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:${netflixDgsVersion}"
+		}
+		dependencies {
+			implementation 'org.springframework.boot:spring-boot-starter-graphql'
+		}
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
