@@ -3,9 +3,11 @@ plugins {
 	id 'jacoco'
 	id 'org.springframework.boot' version "${springbootVersion}"
 	id 'io.spring.dependency-management' version "${springbootDepedencyVersion}"
+	id "nu.studer.jooq" version "${jooqPluginVersion}"
+	id "org.flywaydb.flyway" version "${flyWayVersion}"
 }
 
-group = 'com.changeme'
+group = 'com.url.shortener.service'
 version = '0.0.1-SNAPSHOT'
 
 java {
@@ -30,15 +32,17 @@ ext {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.hibernate:hibernate-validator:8.0.1.Final'
+	implementation 'com.google.googlejavaformat:google-java-format:1.24.0'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter-test'
 	testImplementation 'org.springframework:spring-webflux'
 	testImplementation 'org.springframework.graphql:spring-graphql-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'com.google.code.gson:gson:2.11.0'
 }
 
 Boolean enableDgsCodegen = (project.findProperty("dgsCodeGenEnabled") as String ?: "false").toBoolean()
@@ -50,9 +54,39 @@ dependencyManagement {
 		}
 		dependencies {
 			implementation 'org.springframework.boot:spring-boot-starter-graphql'
+			testImplementation 'com.netflix.graphql.dgs:graphql-dgs-spring-graphql-starter-test'
 		}
 	}
 }
+
+Boolean enableJooq = (project.findProperty("jooqEnabled") as String ?: "false").toBoolean()
+if(enableJooq){
+
+	println("Configuring JOOQ code generation plugin...")
+
+	ext {
+		jooqConfig = {}
+		jooqConfig.driver = project.properties.get('spring.datasource.driver-class-name')
+		jooqConfig.url = project.properties.get('spring.datasource.url')
+		jooqConfig.user = project.properties.get('spring.datasource.username')
+		jooqConfig.password = project.properties.get('spring.datasource.password')
+		jooqConfig.schema = project.properties.get('spring.datasource.schema.name')
+		jooqConfig.generatedPackageName = 'com.car.url.shortener.service.db.generated'
+		jooqConfig.useJavaTimeTypes = true
+	}
+
+	apply from: "gradle/jooq.groovy"
+}
+
+
+Boolean enableFlyway = (project.findProperty("flywayEnabled") as String ?: "false").toBoolean()
+
+if(enableFlyway) {
+	dependencies {
+		implementation "org.flywaydb:flyway-core:${flyWayVersion}"
+	}
+}
+
 
 tasks.named('test') {
 	useJUnitPlatform()
